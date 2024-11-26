@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.spatial.distance as distance
 from src.utils import path_utils
+import os
 
 
 def get_pairswise_distances(pose_files):
@@ -10,7 +11,7 @@ def get_pairswise_distances(pose_files):
     seqs_ids = {}
     for i in range(len(pose_files)):
         pose_file = pose_files[i]
-        seq_name = pose_file.split('/')[-3]
+        seq_name = os.path.basename(os.path.dirname(os.path.dirname(pose_file)))
         if seq_name not in seqs_ids.keys():
             seqs_ids[seq_name] = [i]     
         else:
@@ -63,7 +64,6 @@ def covis_from_pose(img_lists, covis_pairs_out, num_matched, max_rotation, do_ba
             for j in idx:
                 name0 = img_lists[i]
                 name1 = img_lists[j]
-
                 pairs.append((name0, name1))
 
     with open(covis_pairs_out, 'w') as f:

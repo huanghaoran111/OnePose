@@ -299,17 +299,25 @@ def get_K(intrin_file):
     return K, K_homo
 
 def video2img(video_path, outdir, downsample=1):
+    '''
+    该函数从输入的视频文件中提取帧，将其保存为图像文件，支持帧下采样（即间隔指定帧数保存一帧）
+    @param video_path: 输入的视频文件路径
+    @param outdir: 输出图像帧保存的目录
+    @param downsample: 帧下采样因子，默认为 1（不下采样，每帧都保存）
+    '''
+
     Path(outdir).mkdir(exist_ok=True, parents=True)
-    cap = cv2.VideoCapture(video_path)
-    index = 0
+    cap = cv2.VideoCapture(video_path)                  # 使用 OpenCV 的 VideoCapture 类打开视频文件
+    index = 0                                           # 用于记录当前处理到的视频帧序号
 
     logger.info('Begin parsing video...')
     while True:
-        ret, image = cap.read()
+        ret, image = cap.read()                         # cap.read() 方法从视频中逐帧读取图像 返回参数: retval, image
         if not ret:
             break
-        
-        if index % downsample == 0:
+
+        if index % downsample == 0:                     # 通过帧计数器 index 和下采样因子 downsample，确定是否保存该帧
+            # 拼接输出图像路径，保存图像文件名为帧编号
             image_path = osp.join(outdir, '{}.png'.format(index // downsample))
             cv2.imwrite(image_path, image)
         index += 1

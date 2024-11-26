@@ -18,13 +18,18 @@ def names_to_pair(name0, name1):
 def geometric_verification(colmap_path, database_path, pairs_path):
     """ Geometric verfication """
     logging.info('Performing geometric verification of the matches...')
+
+    colmap_path = Path(colmap_path)
+    database_path = Path(database_path)
+    pairs_path = Path(pairs_path)
+
     cmd = [
-        str(colmap_path), 'matches_importer',
-        '--database_path', str(database_path),
-        '--match_list_path', str(pairs_path),
+        colmap_path, 'matches_importer',
+        '--database_path', database_path,
+        '--match_list_path', pairs_path,
         '--match_type', 'pairs'
     ]
-    ret = subprocess.call(cmd)
+    ret = subprocess.call(cmd, shell=True)
     if ret != 0:
         logging.warning('Problem with matches_importer, existing.')
         exit(ret)
@@ -117,19 +122,27 @@ def import_matches(image_ids, database_path, pairs_path, matches_path, feature_p
 def run_triangulation(colmap_path, model_path, database_path, image_dir, empty_model):
     """ run triangulation on given database """
     logging.info('Running the triangulation...')
-    
+    # if not image_dir:
+    #     image_dir = '/'
+    # 确保 image_dir 格式化为统一的正斜杠路径
+    # image_dir = Path(image_dir).as_posix()
+
+    # print(f"Image path: {image_dir}")
+    # print(f"Image directory: {image_dir}")
+    # print(f"Final path: {Path(image_dir) / image_dir}")
+
     cmd = [
-        str(colmap_path), 'point_triangulator',
-        '--database_path', str(database_path),
-        '--image_path', str(image_dir),
-        '--input_path', str(empty_model),
-        '--output_path', str(model_path),
+        colmap_path, 'point_triangulator',
+        '--database_path', database_path,
+        '--image_path', image_dir,
+        '--input_path', empty_model,
+        '--output_path', model_path,
         '--Mapper.ba_refine_focal_length', '0',
         '--Mapper.ba_refine_principal_point', '0',
         '--Mapper.ba_refine_extra_params', '0'
     ]
     logging.info(' '.join(cmd))
-    ret = subprocess.call(cmd)
+    ret = subprocess.call(cmd, shell=True)
     if ret != 0:
         logging.warning('Problem with point_triangulator, existing.')
         exit(ret)
@@ -154,9 +167,34 @@ def run_triangulation(colmap_path, model_path, database_path, image_dir, empty_m
             stats['mean_reproj_error'] = float(stat.split()[-1][:-2])
     return stats
 
+def convert_colmap_model(colmap_path, model, outputs_dir):
+    """Convert COLMAP model to PLY format on Windows."""
+    # 确保输出路径存在
+    if not os.path.exists(outputs_dir):
+        os.makedirs(outputs_dir)
+
+    # 构造命令
+    cmd = [
+        colmap_path, 'model_converter',
+        '--input_path', model,
+        '--output_path', os.path.join(outputs_dir, 'model.ply'),
+        '--output_type', 'PLY'
+    ]
+
+    # 打印命令用于调试
+    print(f"Running command: {' '.join(cmd)}")
+
+    # 调用 subprocess.run 执行命令
+    try:
+        result = subprocess.run(cmd, shell=True)
+        print(result.stdout)  # 打印标准输出
+        print("Model conversion completed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error during model conversion: {e}")
+        print(e.stderr)  # 打印标准错误
 
 def main(sfm_dir, empty_sfm_model, outputs_dir, pairs, features, matches, \
-         colmap_path='colmap', skip_geometric_verification=False, min_match_score=None, image_dir=None):
+         colmap_path='E:\\githubCode\\OnePose\\colmap-x64-windows-cuda\\bin\\colmap.exe', skip_geometric_verification=False, min_match_score=None, image_dir=None):
     """ 
         Import keypoints, matches.
         Given keypoints and matches, reconstruct sparse model from given camera poses.
@@ -178,8 +216,18 @@ def main(sfm_dir, empty_sfm_model, outputs_dir, pairs, features, matches, \
     
     if not skip_geometric_verification:
         geometric_verification(colmap_path, database, pairs)
-    
+
+    # img_list = []
+    # with open(pairs, 'r') as f:
+    #     for line in f:
+    #         name0, name1 = line.split(' ')
+    #         img_list.append((name0.split('\\')[-1], name1.split('\\')[-1]))
+    #
+    # with open(outputs_dir+'/match.txt', 'w') as f:
+    #     f.write('\n'.join(' '.join([i, j]) for i, j in pairs))
+    #
     if not image_dir:
-        image_dir = '/'
+        image_dir = '\"\"'
     stats = run_triangulation(colmap_path, model, database, image_dir, empty_sfm_model)
-    os.system(f'colmap model_converter --input_path {model} --output_path {outputs_dir}/model.ply --output_type PLY')
+    convert_colmap_model(colmap_path, model, outputs_dir)
+    # os.system(f'colmap model_converter --input_path {model} --output_path {outputs_dir}/model.ply --output_type PLY')

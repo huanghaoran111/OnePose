@@ -18,33 +18,52 @@ def buildAdjMatrix(num_2d, num_3d):
     return adj_matrix.cuda()
 
 
+'''
+    GraphAttentionLayer：
+    基于图注意力机制，学习局部节点间的特征交互。
+
+    AttentionalGNN：
+    图注意力网络，结合 2D 和 3D 特征，交替使用图注意力（GATs）和多头注意力（self 和 cross）。
+
+    MultiHeadedAttention 和 AttentionPropagation：
+    用于多头注意力机制，分别实现跨特征和自特征注意力传播。
+
+    GATsSuperGlue：
+    顶层模型，集成了图注意力网络和匹配推理流程，最终生成 2D 和 3D 特征点的匹配关系。
+'''
+
+
+# 这段代码实现了一个深度学习框架，用于 2D 图像特征 和 3D 点云特征 的匹配。
+# 核心目标是利用图注意力网络（GATs）和多头注意力机制，将 2D 和 3D 特征进行多层次融合，并输出两者的匹配结果。
 class AttentionalGNN(nn.Module):
-    
+
+    # 模型的核心，用于特征融合
+
     def __init__(
-        self, 
-        feature_dim: int, 
+        self,
+        feature_dim: int,
         layer_names: list,
         include_self: bool,
         additional: bool,
         with_linear_transform: bool
     ):
         super().__init__()
-        
+
         self.layers = nn.ModuleList([
             GraphAttentionLayer(
-                in_features=256, 
-                out_features=256, 
-                dropout=0.6, 
-                alpha=0.2, 
+                in_features=256,
+                out_features=256,
+                dropout=0.6,
+                alpha=0.2,
                 concat=True,
                 include_self=include_self,
                 additional=additional,
-                with_linear_transform=with_linear_transform, 
+                with_linear_transform=with_linear_transform,
             ) if i % 3 == 0 else AttentionPropagation(feature_dim, 4)
             for i in range(len(layer_names))
         ])
         self.names = layer_names
-    
+
     def forward(self, desc2d_query, desc3d_db, desc2d_db):
         for layer, name in zip(self.layers, self.names):
             if name == 'GATs':
@@ -62,7 +81,7 @@ class AttentionalGNN(nn.Module):
                 src0, src1 = desc2d_query, desc3d_db
                 delta0, delta1 = layer(desc2d_query, src0), layer(desc3d_db, src1)
                 desc2d_query, desc3d_db = (desc2d_query + delta0), (desc3d_db + delta1)
-        
+
         return desc2d_query, desc3d_db
     
 
@@ -127,7 +146,7 @@ def MLP(channels: list, do_bn=True):
             layers.append(nn.ReLU())
     return nn.Sequential(*layers)
 
-
+# 对输入的关键点位置和分数通过 MLP 进行联合编码，生成统一的描述符。
 class KeypointEncoder(nn.Module):
     """ Joint encoding of visual appearance and location using MLPs """
     def __init__(self, inp_dim, feature_dim, layers):
@@ -141,12 +160,15 @@ class KeypointEncoder(nn.Module):
 
 
 class GATsSuperGlue(nn.Module):
-    
+    # 编码输入的 2D 和 3D 特征点。
+    # 通过多层注意力机制融合特征。
+    # 输出匹配结果和匹配得分。
     def __init__(self, hparams):
+        # hparams: 包含超参数配置，如描述符维度、注意力网络层数等
         super().__init__()
         self.hparams = hparams
         self.match_type = hparams['match_type']
-
+        # KeypointEncoder：对 2D 和 3D 特征点（关键点）进行编码
         self.kenc_2d = KeypointEncoder(
                         inp_dim=3,
                         feature_dim=hparams['descriptor_dim'],
@@ -160,6 +182,7 @@ class GATsSuperGlue(nn.Module):
                     )
         
         GNN_layers = ['GATs', 'self', 'cross'] * 4
+        # AttentionalGNN：多层图注意力网络，融合 2D 和 3D 特征
         self.gnn = AttentionalGNN(
                         feature_dim=hparams['descriptor_dim'],
                         layer_names=GNN_layers,
@@ -167,6 +190,7 @@ class GATsSuperGlue(nn.Module):
                         additional=hparams['additional'],
                         with_linear_transform=hparams['with_linear_transform']
                     )
+        # final_proj：用于最终特征投影
         self.final_proj = nn.Conv1d(
                             in_channels=hparams['descriptor_dim'],
                             out_channels=hparams['descriptor_dim'],
@@ -177,7 +201,11 @@ class GATsSuperGlue(nn.Module):
         self.register_parameter('bin_score', bin_score)
     
     def forward(self, data):
-        """ 
+        """
+        输入数据 data： 包含 2D 和 3D 特征点及其描述符
+        keypoints2d 和 keypoints3d：2D 和 3D 特征点位置
+        descriptors2d_query 和 descriptors3d_db：对应的特征描述符
+        scores2d_query 和 scores3d_db：每个特征点的分数（置信度）
         Keys of data:
             keypoints2d: [b, n1, 2]
             keypoints3d: [b, n2, 3]
@@ -203,24 +231,33 @@ class GATsSuperGlue(nn.Module):
             }
 
         # Multi-layer Transformer network
+        # GATs：图注意力层，融合同一局部节点间的特征。
+        # cross：跨特征注意力，交换 2D 和 3D 特征。
+        # self：自特征注意力，学习 2D 和 3D 特征的自身关系
+        # desc2d_query 和 desc3d_db 分别为融合后的 2D 和 3D 描述符
         desc2d_query, desc3d_db = self.gnn(desc2d_query, desc3d_db, desc2d_db)
 
         # Final MLP projection
         mdesc2d_query, mdesc3d_db = self.final_proj(desc2d_query), self.final_proj(desc3d_db)
 
         # Normalize mdesc to avoid NaN
+        # 投影特征到输出空间
         mdesc2d_query = F.normalize(mdesc2d_query, p=2, dim=1)
         mdesc3d_db = F.normalize(mdesc3d_db, p=2, dim=1)
 
         # Get the matches with score above "match_threshold"
         if self.match_type == "softmax":
+            # 计算匹配得分——通过 2D 和 3D 特征描述符的点积计算匹配分数矩阵
             scores = torch.einsum('bdn,bdm->bnm', mdesc2d_query, mdesc3d_db) / self.hparams['scale_factor']
+            # 使用 Softmax 归一化分数
             conf_matrix = F.softmax(scores, 1) * F.softmax(scores, 2)
 
+            # 互斥匹配（Mutual Matching）
             max0, max1 = conf_matrix[:, :, :].max(2), conf_matrix[:, :, :].max(1)
             indices0, indices1 = max0.indices, max1.indices
             mutual0 = arange_like(indices0, 1)[None] == indices1.gather(1, indices0)
             mutual1 = arange_like(indices1, 1)[None] == indices0.gather(1, indices1)
+            # 检查 2D 特征点与 3D 特征点是否是唯一匹配关系。
             zero = conf_matrix.new_tensor(0)
             mscores0 = torch.where(mutual0, max0.values, zero)
             mscores1 = torch.where(mutual1, mscores0.gather(1, indices1), zero)

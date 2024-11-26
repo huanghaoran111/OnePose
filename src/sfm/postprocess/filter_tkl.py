@@ -4,6 +4,7 @@ import os.path as osp
 import matplotlib.pyplot as plt
 
 from src.utils.colmap.read_write_model import write_model
+import subprocess
 
 
 def get_points_count(points3D, show=False):
@@ -77,5 +78,12 @@ def vis_tkl_filtered_pcds(model_path, points_count_list, track_length, output_pa
         os.makedirs(output_path)
     
     write_model(cameras, images, points3D, output_path, '.bin')
-    os.system(f'colmap model_converter --input_path {output_path} --output_path {output_file_path} --output_type PLY')
+    # os.system(f'colmap model_converter --input_path {output_path} --output_path {output_file_path} --output_type PLY')
+    cmd = [
+        'E:\\githubCode\\OnePose\\colmap-x64-windows-cuda\\bin\\colmap.exe', 'model_converter',
+        '--input_path', output_path,
+        '--output_path', output_file_path,
+        '--output_type', 'PLY'
+    ]
+    subprocess.run(cmd, check=True, shell=True, text=True, capture_output=True)
     return output_file_path

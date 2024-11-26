@@ -35,8 +35,8 @@ def import_data(img_lists, do_ba=False):
     cameras_out = {}
 
     def compare(img_name):
-        key = img_name.split('/')[-1]
-        return int(key.split('.')[0])
+        key = Path(img_name).name
+        return int(Path(key).stem)
     img_lists.sort(key=compare)
 
     key, img_id, camera_id = 0, 0, 0
@@ -48,10 +48,10 @@ def import_data(img_lists, do_ba=False):
         key += 1
         img_id += 1
         camera_id += 1
-        
-        img_name = img_path.split('/')[-1]
-        base_dir = osp.dirname(osp.dirname(img_path))
-        img_index = int(img_name.split('.')[0])
+
+        img_name = Path(img_path).name  # 提取文件名，例如 "0.png"
+        base_dir = Path(img_path).parents[1]  # 获取上两级目录
+        img_index = int(Path(img_name).stem)  # 提取文件名的主干部分并转换为整数
         
         # read pose
         pose_dir = path_utils.get_gt_pose_dir(base_dir)
@@ -64,7 +64,8 @@ def import_data(img_lists, do_ba=False):
 
         image = cv2.imread(img_path)
         h, w, _ = image.shape
-        
+
+        # 创建 Image 和 Camera 对象
         image = Image(
             id=img_id,
             qvec=qvec,

@@ -22,7 +22,7 @@ def names_to_pair(name0, name1):
 
 
 @torch.no_grad()
-def spg(cfg, feature_path, covis_pairs, matches_out, vis_match=False):
+def spg(cfg, feature_path, covis_pairs, matches_out, obj_name, vis_match=False):
     """Match features by SuperGlue"""
     from src.models.matchers.SuperGlue.superglue import SuperGlue as spg_matcher
     from src.utils.model_io import load_network
@@ -53,6 +53,8 @@ def spg(cfg, feature_path, covis_pairs, matches_out, vis_match=False):
             continue
         
         data = {}
+        # name0_path = f'E:/githubCode/OnePose/data/datasets/train_data/{name0}'
+        # name1_path = f'E:/githubCode/OnePose/data/datasets/train_data/{name1}'
         feats0, feats1 = feature_file[name0], feature_file[name1]
         for k in feats0.keys():
             data[k+'0'] = feats0[k].__array__()
@@ -88,8 +90,8 @@ def spg(cfg, feature_path, covis_pairs, matches_out, vis_match=False):
     logging.info('Finishing exporting matches.')
 
 
-def main(cfg, feature_out, covis_pairs_out, matches_out, vis_match=False):
+def main(cfg, feature_out, covis_pairs_out, matches_out, obj_name, vis_match=False):
     if cfg.network.matching == 'superglue':
-        spg(cfg, feature_out, covis_pairs_out, matches_out, vis_match)
+        spg(cfg, feature_out, covis_pairs_out, matches_out, obj_name, vis_match)
     else:
         raise NotImplementedError

@@ -82,7 +82,7 @@ def load_network(net, model_dir, resume=True, epoch=-1, strict=True, force=False
         model_path = model_dir
 
     print('=> load weights: ', model_path)
-    pretrained_model = torch.load(model_path, torch.device("cpu"))
+    pretrained_model = torch.load(model_path, torch.device("cpu"), weights_only=True)
     if 'net' in pretrained_model.keys():
         net.load_state_dict(pretrained_model['net'], strict=strict)
     else:

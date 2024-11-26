@@ -21,11 +21,11 @@ data_root:
 
 def get_gt_pose_path_by_color(color_path, det_type='GT_box'):
     if det_type == "GT_box":
-        return color_path.replace("/color/", "/poses_ba/").replace(
+        return color_path.replace("\\color\\", "\\poses_ba\\").replace(
             ".png", ".txt"
         )
     elif det_type == 'feature_matching':
-        return color_path.replace("/color_det/", "/poses_ba/").replace(
+        return color_path.replace("\\color_det\\", "\\poses_ba\\").replace(
             ".png", ".txt"
         )
     else:
@@ -33,19 +33,19 @@ def get_gt_pose_path_by_color(color_path, det_type='GT_box'):
 
 def get_img_full_path_by_color(color_path, det_type='GT_box'):
     if det_type == "GT_box":
-        return color_path.replace("/color/", "/color_full/")
+        return color_path.replace("\\color\\", "\\color_full\\")
     elif det_type == 'feature_matching':
-        return color_path.replace("/color_det/", "/color_full/")
+        return color_path.replace("\\color_det\\", "\\color_full\\")
     else:
         raise NotImplementedError
 
 def get_intrin_path_by_color(color_path, det_type='GT_box'):
     if det_type == "GT_box":
-        return color_path.replace("/color/", "/intrin_ba/").replace(
+        return color_path.replace("\\color\\", "\\intrin_ba\\").replace(
             ".png", ".txt"
         )
     elif det_type == 'feature_matching':
-        return color_path.replace("/color_det/", "/intrin_det/").replace(
+        return color_path.replace("\\color_det\\", "\\intrin_det\\").replace(
             ".png", ".txt"
         )
     else:

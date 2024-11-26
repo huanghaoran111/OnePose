@@ -68,7 +68,7 @@ network:
     matching: superglue
 
 datamodule:
-    scan_data_dir: ${work_dir}/data/onepose_datasets
+    scan_data_dir: ${work_dir}/data/datasets
     data_dir: ${work_dir}/data/sfm_model
     out_path: ${work_dir}/data/cache/${task_name}/${split}.json
 

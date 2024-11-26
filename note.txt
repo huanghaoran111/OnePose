@@ -1,0 +1,6 @@
+需要先执行 Dataset setup 的操作 获取数据中需要的
+    把yaml中的文件处理
+
+Image path: E:/githubCode/OnePose/data/sfm_model/0410-huiyuan-box
+Image directory: E:/githubCode/OnePose/data/sfm_model/0410-huiyuan-box
+Final path: E:\githubCode\OnePose\data\sfm_model\0410-huiyuan-box

@@ -1,0 +1,46 @@
+work_dir: ${hydra:runtime.cwd}
+data_dir: ${work_dir}/data
+print_config: true
+type: sfm
+redo: true
+scan_data_dir: ${work_dir}/data/datasets/train_data
+dataset:
+  max_num_kp3d: 2500
+  max_num_kp2d: 1000
+  data_dir:
+  - ${scan_data_dir}/0512-ugreenhub-box ugreenhub-1 ugreenhub-2 ugreenhub-3 ugreenhub-4
+  - ${scan_data_dir}/0513-busbox-box busbox-1 busbox-2 busbox-3
+  - ${scan_data_dir}/0516-wewarm-box wewarm-1 wewarm-2 wewarm-3
+  - ${scan_data_dir}/0529-onionnoodles-box onionnoodles-1 onionnoodles-2
+  - ${scan_data_dir}/0530-trufflenoodles-box trufflenoodles-1 trufflenoodles-2 trufflenoodles-3
+  - ${scan_data_dir}/0531-whiskware-box whiskware-1 whiskware-2 whiskware-3
+  - ${scan_data_dir}/0532-delonghi-box delonghi-1 delonghi-2
+  - ${scan_data_dir}/0533-shiramyun-box shiramyun-1 shiramyun-2 shiramyun-3
+  - ${scan_data_dir}/0536-ranovarect-box ranovarect-1 ranovarect-2 ranvorect-3 ranvorect-4
+  - ${scan_data_dir}/0542-bueno-box bueno-1 bueno-2 bueno-3
+  - ${scan_data_dir}/0545-book-others book-1 book-2 book-3
+  - ${scan_data_dir}/0546-can-bottle can-1 can-2 can-3
+  - ${scan_data_dir}/0549-footballcan-bottle footballcan-1 footballcan-2 footballcan-3
+  - ${scan_data_dir}/0556-pinkbox-box pinkbox-1 pinkbox-2 pinkbox-3
+  - ${scan_data_dir}/0561-yellowbottle-bottle yellowbottle-1 yellowbottle-2 yellowbottle-3
+  - ${scan_data_dir}/0562-yellowbox-box yellowbox-1 yellowbox-2 yellowbox-3
+  - ${scan_data_dir}/0563-applejuice-box applejuice-1 applejuice-2 applejuice-3
+  - ${scan_data_dir}/0566-chillisauce-box chillisauce-1 chillisauce-2 chillisauce-3
+  - ${scan_data_dir}/0567-coffeebox-box coffeebox-1 coffeebox-2 coffeebox-3
+  - ${scan_data_dir}/0569-greentea-bottle greentea-1 greentea-2 greentea-3
+  - ${scan_data_dir}/0571-cakebox-box cakebox-1 cakebox-2 cakebox-3
+  - ${scan_data_dir}/0572-milkbox-others milkbox-1 milkbox-2 milkbox-3
+  - ${scan_data_dir}/0573-redchicken-others redchicken-1 redchicken-2 redchicken-3
+  - ${scan_data_dir}/0574-rubberduck-others rubberduck-1 rubberduck-2 rubberduck-3
+  - ${scan_data_dir}/0575-saltbottle-bottle saltbottle-1 saltbottle-2 satlbottle-3
+  outputs_dir: ${work_dir}/data/sfm_model/{}
+network:
+  detection: superpoint
+  detection_model_path: ${work_dir}/data/models/extractors/SuperPoint/superpoint_v1.pth
+  matching: superglue
+  matching_model_path: ${work_dir}/data/models/matchers/SuperGlue/superglue_outdoor.pth
+sfm:
+  down_ratio: 5
+  covis_num: 10
+  rotation_thresh: 50
+disable_lightning_logs: true
